@@ -14,7 +14,7 @@ contract VaultScript is Script {
 
         //_addressesProvider testnet = 0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A
         //_addressesProvider mainnet = 0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e
-        vault = new Vault();
+        vault = new Vault(0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A);
 
         vm.stopBroadcast();
     }

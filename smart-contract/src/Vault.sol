@@ -20,7 +20,7 @@ contract Vault {
     mapping(address => uint256) public productivityScore;
     uint256 public totalRewards;
 
-    constructor(address _token, address _rewardToken, address _addressProvider) {
+    constructor(address _token, address _addressProvider) {
         token = IERC20(_token);
         owner = payable(msg.sender);
         ADDRESSES_PROVIDER = IPoolAddressesProvider(_addressProvider);
