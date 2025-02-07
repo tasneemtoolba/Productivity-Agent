@@ -13,8 +13,6 @@ contract Vault {
     address payable owner;
 
     IERC20 public immutable token;
-    uint256 public totalSupply;
-    mapping(address => uint256) public balanceOf;
 
     mapping(address => uint256) public userRewards;
     mapping(address => uint256) public productivityScore;
@@ -27,60 +25,6 @@ contract Vault {
         POOL = IPool(ADDRESSES_PROVIDER.getPool());
     }
 
-    function _mint(address _to, uint256 _shares) private {
-        totalSupply += _shares;
-        balanceOf[_to] += _shares;
-    }
-
-    function _burn(address _from, uint256 _shares) private {
-        totalSupply -= _shares;
-        balanceOf[_from] -= _shares;
-    }
-
-    function deposit(uint256 _amount) external {
-        /*
-        a = amount
-        B = balance of token before deposit
-        T = total supply
-        s = shares to mint
-
-        (T + s) / T = (a + B) / B 
-
-        s = aT / B
-        */
-        uint256 shares;
-        if (totalSupply == 0) {
-            shares = _amount;
-        } else {
-            shares = (_amount * totalSupply) / token.balanceOf(address(this));
-        }
-
-        _mint(msg.sender, shares);
-        // token.transferFrom(msg.sender, address(this), _amount);
-        require(_amount > 0, "Amount must be greater than 0");
-        require(token.balanceOf(msg.sender) >= _amount, "user balance should be more than amount");
-        supplyLiquidity(_amount);
-    }
-
-    function withdraw(uint256 _shares, uint256 _amount) external {
-        /*
-        a = amount
-        B = balance of token before withdraw
-        T = total supply
-        s = shares to burn
-
-        (T - s) / T = (B - a) / B 
-
-        a = sB / T
-        */
-        // uint256 _amount = (_shares * token.balanceOf(address(this))) /
-        //     totalSupply;
-        _burn(msg.sender, _shares);
-        withdrawlLiquidity(_amount);
-        require(token.balanceOf(address(this)) >= _amount, "contract balance should be more than amount");
-        token.transfer(msg.sender, _amount);
-    }
-
 
     function approveTokens(address _spender, uint256 _amount) external {
         token.approve(_spender, _amount);
@@ -89,11 +33,7 @@ contract Vault {
     function submitProof(uint256 _score) external {
         productivityScore[msg.sender] = _score;
     }
-
-    // function harvestRewards() external {
-    //     totalRewards += ;
-    // }
-
+    
     // function claimRewards() external {
     //     uint256 userReward = userRewards[msg.sender];
     //     require(userReward > 0, "No rewards to claim");
@@ -104,21 +44,23 @@ contract Vault {
     // function claimDAOSlashedRewards() external {
         // Logic for DAO to claim rewards based on slashed tokens
     // }
-  function supplyLiquidity(uint256 _amount) internal {
-        uint256 amount = _amount;
-        address onBehalfOf = address(this);
+  function deposit(uint256 _amount, address _poolContractAddress) external {
+        require(_amount > 0, "Amount must be greater than 0");
+        require(token.balanceOf(msg.sender) >= _amount, "user balance should be more than amount");
+        
+        address onBehalfOf = msg.sender;
         uint16 referralCode = 0;
-
-        POOL.supply(address(token), amount, onBehalfOf, referralCode);
+        token.approve(_poolContractAddress, _amount);
+        POOL.supply(address(token), _amount, onBehalfOf, referralCode);
     }
 
-    function withdrawlLiquidity(uint256 _amount)
+    function withdraw(uint256 _amount)
         internal
         returns (uint256)
     {
         address asset = address(token);
         uint256 amount = _amount;
-        address to = address(this);
+        address to = msg.sender;
 
         return POOL.withdraw(asset, amount, to);
     }
