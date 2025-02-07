@@ -5,7 +5,7 @@ pragma solidity <= 0.8.28;
 import { IPool } from "@aave/aave-v3-core/contracts/interfaces/IPool.sol";
 import { IPoolAddressesProvider } from "@aave/aave-v3-core/contracts/interfaces/IPoolAddressesProvider.sol";
 import { IAToken } from "@aave/aave-v3-core/contracts/interfaces/IAToken.sol";
-// import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "@aave/aave-v3-core/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
 
 contract Vault {
     IPoolAddressesProvider public immutable ADDRESSES_PROVIDER;
@@ -62,7 +62,7 @@ contract Vault {
         supplyLiquidity(_amount);
     }
 
-    function withdraw(uint256 _shares) external {
+    function withdraw(uint256 _shares, uint256 _amount) external {
         /*
         a = amount
         B = balance of token before withdraw
@@ -73,11 +73,12 @@ contract Vault {
 
         a = sB / T
         */
-        uint256 _amount = (_shares * token.balanceOf(address(this))) /
-            totalSupply;
+        // uint256 _amount = (_shares * token.balanceOf(address(this))) /
+        //     totalSupply;
         _burn(msg.sender, _shares);
-        token.transfer(msg.sender, _amount);
         withdrawlLiquidity(_amount);
+        require(token.balanceOf(address(this)) >= _amount, "contract balance should be more than amount");
+        token.transfer(msg.sender, _amount);
     }
 
 
@@ -167,29 +168,4 @@ contract Vault {
 
     receive() external payable {}
   
-}
-interface IERC20 {
-    function totalSupply() external view returns (uint256);
-
-    function balanceOf(address account) external view returns (uint256);
-
-    function transfer(address recipient, uint256 amount)
-        external
-        returns (bool);
-
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
-
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    function transferFrom(address sender, address recipient, uint256 amount)
-        external
-        returns (bool);
-
-    event Transfer(address indexed from, address indexed to, uint256 amount);
-    event Approval(
-        address indexed owner, address indexed spender, uint256 amount
-    );
 }
