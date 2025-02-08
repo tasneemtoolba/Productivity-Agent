@@ -4,4 +4,7 @@ out = "out"
 libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
-remappings = ["@aave/aave-v3-core/=lib/aave-v3-core/"]
+remappings = ["@aave/aave-v3-core/=lib/aave-v3-core/","forge-std/=lib/forge-std/"]
+
+[rpc_endpoints]
+base = "https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
