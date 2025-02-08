@@ -29,15 +29,14 @@ contract VaultTest is Test {
         vm.selectFork(forkId);
         deal(address(usdcToken), address(this), 2e6);
         vault = new Vault(0xe20fCBdBfFC4Dd138cE8b2E6FBb6CB49777ad64D);
+        usdcToken.approve(address(vault), 2e6);
     }
 
     function test_canDepositUSDC() public {
-        usdcToken.approve(address(vault), 1e6);
         vault.deposit(1e4);
     }
 
     function test_canWithdrawUSDC() public {
-        usdcToken.approve(address(vault), 1e6);
         vault.deposit(1e4);
         vault.withdraw(1e4);
     }
@@ -48,20 +47,17 @@ contract VaultTest is Test {
 
     // New test cases
     function test_cannotDepositZeroAmount() public {
-        usdcToken.approve(address(vault), 2e6);
         vm.expectRevert("Amount must be greater than 0");
         vault.deposit(0);
     }
     // fails hehe
     function test_cannotWithdrawMoreThanBalance() public {
-        usdcToken.approve(address(vault), 2e6);
         vault.deposit(1e4);
         vm.expectRevert("user balance is less than amount");
         vault.withdraw(2e4);
     }
 
     function test_cannotWithdrawZeroAmount() public {
-        usdcToken.approve(address(vault), 1e6);
         vault.deposit(1e4);
         vm.expectRevert("Amount must be greater than 0");
         vault.withdraw(0);

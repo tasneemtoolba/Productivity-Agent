@@ -18,8 +18,6 @@ contract Vault is ERC20{
     IERC20 public immutable aBasUsdc = IERC20(0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB);
 
     mapping(address => uint256) public userRewards;
-    mapping(address => uint256) public productivityScore;
-    uint256 public totalRewards;
 
     constructor(address _addressProvider) ERC20("VaultUSDC", "vUSDC"){
         owner = payable(msg.sender);
@@ -49,10 +47,8 @@ contract Vault is ERC20{
         require(balanceOf(msg.sender) >= _amount, "user balance is less than amount");
         // require(balanceOf(msg.sender)>=_amount,"withdrawing more than the available");
         withdrawlLiquidity(_amount);
-        console.log(balanceOf(msg.sender));
         usdcToken.transfer(msg.sender, _amount);
         _burn(msg.sender, _amount);
-        console.log(balanceOf(msg.sender));
     }
 
     function withdrawlLiquidity(uint256 _amount) internal returns (uint256) {
@@ -62,25 +58,38 @@ contract Vault is ERC20{
         
         return POOL.withdraw(asset, amount, to);
     }
+    // Users can claim (1 - x) * p * a LP reward tokens 
+    // where a is the total available rewards in the contract,
+    // p is the percentage of liquidity provided by the user 
+    // and x is the percentage of reward that was slashed by the users’ lack of productivity.
+    // _slashed is out of 10e18 ether. So 10e18 would be 100%, 10e17 would be 10%, etc
 
-
-    // function claimRewards() external {
-    //     uint256 userReward = userRewards[msg.sender];
-    //     require(userReward > 0, "No rewards to claim");
-    //     userRewards[msg.sender] = 0;
-    //     usdcToken.transfer(msg.sender, userReward);
-    // }
-
-    // function claimDAOSlashedRewards() external {
-    // Logic for DAO to claim rewards based on slashed tokens
-    // }
-    // function claimRewards(address _user, uint256 _slashed) external {
-    // // here you take the msg.sender, you check its amount of protocol tokens, send the share of rewards minus what was slashed, send the slashed amount to the DAO
-    // }
-    function submitProof(uint256 _score) external {
-        productivityScore[msg.sender] += _score;
+    function checkDAOReward() external view returns(uint256) {
+        return aBasUsdc.balanceOf(address(this));
     }
-    
+
+    function checkUserReward(address _user, uint256 _slashed) external view returns(uint256) {
+        return  calculateUserReward(_user, _slashed);
+    }
+    function calculateUserReward(address _user, uint256 _slashed) internal view returns(uint256) {
+        if (totalSupply() == 0) {
+            return 0;  
+        }
+        require(_slashed <= 1e18,"invalid _slashed value");
+        // Calculate the final reward after slashing
+        return (1e18 - _slashed) * (aBasUsdc.balanceOf(address(this)) - totalSupply()) * balanceOf(_user)/ (1e18 * totalSupply());
+    }
+    function claimDAOReward() external {
+        withdrawlLiquidity(aBasUsdc.balanceOf(address(this)));
+    }
+    function claimRewards(address _user, uint256 _slashed) external {
+    // here you take the msg.sender, you check its amount of protocol tokens, send the share of rewards minus what was slashed, send the slashed amount to the DAO
+        // require(balanceOf(msg.sender)>=_amount,"withdrawing more than the available");
+        uint256 calculatedRewards = calculateUserReward(_user, _slashed);
+        withdrawlLiquidity(calculatedRewards);
+        usdcToken.transfer(msg.sender, calculatedRewards);
+    }
+
     function getUserAccountData(address _userAddress)
         external
         view
