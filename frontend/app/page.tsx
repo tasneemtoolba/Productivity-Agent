@@ -23,32 +23,12 @@ import {
   TransactionStatusAction,
   TransactionStatusLabel,
 } from '@coinbase/onchainkit/transaction'; 
-import ArrowSvg from './svg/ArrowSvg';
-import ImageSvg from './svg/Image';
-import OnchainkitSvg from './svg/OnchainKit';
 import type { LifecycleStatus } from '@coinbase/onchainkit/transaction';
-import { useAccount } from 'wagmi';
 import { calls } from './calls'; 
 
-const components = [
-  {
-    name: 'Transaction',
-    url: 'https://onchainkit.xyz/transaction/transaction',
-  },
-  { name: 'Swap', url: 'https://onchainkit.xyz/swap/swap' },
-  { name: 'Checkout', url: 'https://onchainkit.xyz/checkout/checkout' },
-  { name: 'Wallet', url: 'https://onchainkit.xyz/wallet/wallet' },
-  { name: 'Identity', url: 'https://onchainkit.xyz/identity/identity' },
-];
 
-const templates = [
-  { name: 'NFT', url: 'https://github.com/coinbase/onchain-app-template' },
-  { name: 'Commerce', url: 'https://github.com/coinbase/onchain-commerce-template'},
-  { name: 'Fund', url: 'https://github.com/fakepixels/fund-component' },
-];
 
 export default function App() {
-   const { address } = useAccount();
   
   const handleOnStatus = useCallback((status: LifecycleStatus) => {
     console.log('LifecycleStatus', status);
@@ -94,7 +74,7 @@ export default function App() {
         <div className="max-w-4xl w-full p-4">
        <img src="productivity_logo.png" alt="Productivity Logo" className="max-w-4xl w-full p-4" />
     <Transaction
-            chainId={ 0x14a34}
+      chainId={ 8453}
       calls={calls}
       onStatus={handleOnStatus}
     >
