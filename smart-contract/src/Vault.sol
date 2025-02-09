@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity <= 0.8.28;
+pragma solidity <=0.8.28;
 
 // Import AAVE interfaces
 import {IPool} from "@aave/aave-v3-core/contracts/interfaces/IPool.sol";
@@ -9,17 +9,19 @@ import {IERC20} from "@aave/aave-v3-core/contracts/dependencies/openzeppelin/con
 import {ERC20} from "@aave/aave-v3-core/contracts/dependencies/openzeppelin/contracts/ERC20.sol";
 import "forge-std/src/console.sol";
 
-contract Vault is ERC20{
+contract Vault is ERC20 {
     IPoolAddressesProvider public immutable ADDRESSES_PROVIDER;
     IPool public immutable POOL;
     address payable owner;
 
-    IERC20 public immutable usdcToken = IERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
-    IERC20 public immutable aBasUsdc = IERC20(0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB);
+    IERC20 public immutable usdcToken =
+        IERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
+    IERC20 public immutable aBasUsdc =
+        IERC20(0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB);
 
     mapping(address => uint256) public userRewards;
 
-    constructor(address _addressProvider) ERC20("VaultUSDC", "vUSDC"){
+    constructor(address _addressProvider) ERC20("VaultUSDC", "vUSDC") {
         owner = payable(msg.sender);
         ADDRESSES_PROVIDER = IPoolAddressesProvider(_addressProvider);
         POOL = IPool(ADDRESSES_PROVIDER.getPool());
@@ -33,7 +35,10 @@ contract Vault is ERC20{
     }
 
     function _supplyLiquidity(uint256 _amount) internal {
-        require(usdcToken.balanceOf(address(this)) >= _amount, "contract balance is less than amount");
+        require(
+            usdcToken.balanceOf(address(this)) >= _amount,
+            "contract balance is less than amount"
+        );
 
         address onBehalfOf = address(this);
         uint16 referralCode = 0;
@@ -44,7 +49,10 @@ contract Vault is ERC20{
 
     function withdraw(uint256 _amount) external {
         require(_amount > 0, "Amount must be greater than 0");
-        require(balanceOf(msg.sender) >= _amount, "user balance is less than amount");
+        require(
+            balanceOf(msg.sender) >= _amount,
+            "user balance is less than amount"
+        );
         // require(balanceOf(msg.sender)>=_amount,"withdrawing more than the available");
         withdrawlLiquidity(_amount);
         usdcToken.transfer(msg.sender, _amount);
@@ -55,42 +63,57 @@ contract Vault is ERC20{
         address asset = address(usdcToken);
         uint256 amount = _amount;
         address to = address(this);
-        
+
         return POOL.withdraw(asset, amount, to);
     }
-    // Users can claim (1 - x) * p * a LP reward tokens 
+
+    // Users can claim (1 - x) * p * a LP reward tokens
     // where a is the total available rewards in the contract,
-    // p is the percentage of liquidity provided by the user 
+    // p is the percentage of liquidity provided by the user
     // and x is the percentage of reward that was slashed by the users’ lack of productivity.
     // _slashed is out of 10e18 ether. So 10e18 would be 100%, 10e17 would be 10%, etc
 
-    function checkDAOReward() external view returns(uint256) {
+    function checkDAOReward() external view returns (uint256) {
         return aBasUsdc.balanceOf(address(this));
     }
 
-    function checkUserReward(address _user, uint256 _slashed) external view returns(uint256) {
-        return  calculateUserReward(_user, _slashed);
+    function checkUserReward(
+        address _user,
+        uint256 _slashed
+    ) external view returns (uint256) {
+        return calculateUserReward(_user, _slashed);
     }
-    function calculateUserReward(address _user, uint256 _slashed) internal view returns(uint256) {
+
+    function calculateUserReward(
+        address _user,
+        uint256 _slashed
+    ) internal view returns (uint256) {
         if (totalSupply() == 0) {
-            return 0;  
+            return 0;
         }
-        require(_slashed <= 1e18,"invalid _slashed value");
+        require(_slashed <= 1e18, "invalid _slashed value");
         // Calculate the final reward after slashing
-        return (1e18 - _slashed) * (aBasUsdc.balanceOf(address(this)) - totalSupply()) * balanceOf(_user)/ (1e18 * totalSupply());
+        return
+            ((1e18 - _slashed) *
+                (aBasUsdc.balanceOf(address(this)) - totalSupply()) *
+                balanceOf(_user)) / (1e18 * totalSupply());
     }
+
     function claimDAOReward() external {
         withdrawlLiquidity(aBasUsdc.balanceOf(address(this)));
     }
+
     function claimUserRewards(address _user, uint256 _slashed) external {
-    // here you take the msg.sender, you check its amount of protocol tokens, send the share of rewards minus what was slashed, send the slashed amount to the DAO
+        // here you take the msg.sender, you check its amount of protocol tokens, send the share of rewards minus what was slashed, send the slashed amount to the DAO
         // require(balanceOf(msg.sender)>=_amount,"withdrawing more than the available");
         uint256 calculatedRewards = calculateUserReward(_user, _slashed);
         withdrawlLiquidity(calculatedRewards);
         usdcToken.transfer(msg.sender, calculatedRewards);
     }
 
-    function getUserAccountData(address _userAddress)
+    function getUserAccountData(
+        address _userAddress
+    )
         external
         view
         returns (
@@ -118,7 +141,10 @@ contract Vault is ERC20{
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only the contract owner can call this function");
+        require(
+            msg.sender == owner,
+            "Only the contract owner can call this function"
+        );
         _;
     }
 
