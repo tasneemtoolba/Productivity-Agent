@@ -82,7 +82,7 @@ contract Vault is ERC20{
     function claimDAOReward() external {
         withdrawlLiquidity(aBasUsdc.balanceOf(address(this)));
     }
-    function claimRewards(address _user, uint256 _slashed) external {
+    function claimUserRewards(address _user, uint256 _slashed) external {
     // here you take the msg.sender, you check its amount of protocol tokens, send the share of rewards minus what was slashed, send the slashed amount to the DAO
         // require(balanceOf(msg.sender)>=_amount,"withdrawing more than the available");
         uint256 calculatedRewards = calculateUserReward(_user, _slashed);

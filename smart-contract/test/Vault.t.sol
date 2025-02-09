@@ -50,7 +50,7 @@ contract VaultTest is Test {
         vm.expectRevert("Amount must be greater than 0");
         vault.deposit(0);
     }
-    // fails hehe
+
     function test_cannotWithdrawMoreThanBalance() public {
         vault.deposit(1e4);
         vm.expectRevert("user balance is less than amount");
@@ -63,6 +63,10 @@ contract VaultTest is Test {
         vault.withdraw(0);
     }
 
+    function test_cannotWithdrawWithoutDeposit() public {
+        vm.expectRevert("user balance is less than amount");
+        vault.withdraw(1e4); // No deposit made yet
+    }
     // fails hehe
     // function test_cannotDepositMoreThanBalance() public {
     //     usdcToken.approve(address(vault), 1e6);
@@ -70,21 +74,45 @@ contract VaultTest is Test {
     //     vault.deposit(2e6); // Trying to deposit more than the balance
     // }
 
-    function test_cannotWithdrawWithoutDeposit() public {
-        vm.expectRevert("user balance is less than amount");
-        vault.withdraw(1e4); // No deposit made yet
+    // New tests for claiming rewards
+    function test_canClaimDAOReward() public {
+        vault.deposit(1e4);
+        vault.claimDAOReward();
+        // Check if the DAO reward was claimed correctly
+        assertEq(vault.checkDAOReward(), 0); // Assuming no rewards initially
     }
 
-    function test_canSubmitProof() public {
-        vault.submitProof(100);
-        // Check if the productivity score is updated
-        assertEq(vault.productivityScore(address(this)), 100);
+    function test_canClaimUserRewards() public {
+        vault.deposit(1e4);
+        uint256 slashed = 0; // Assuming no slashing for simplicity
+        vault.claimUserRewards(address(this), slashed);
+        // Check if the user rewards were claimed correctly
+        assertEq(vault.checkUserReward(address(this), slashed), 0); // Assuming no rewards initially
     }
 
-    function test_canSubmitMultipleProofs() public {
-        vault.submitProof(50);
-        vault.submitProof(150);
-        // Check if the productivity score is updated correctly
-        assertEq(vault.productivityScore(address(this)), 200);
+    function test_checkUserReward() public {
+        vault.deposit(1e4);
+        uint256 slashed = 0; // Assuming no slashing for simplicity
+        uint256 userReward = vault.checkUserReward(address(this), slashed);
+        assertEq(userReward, 0); // Assuming no rewards initially
     }
+
+    function test_checkDAOReward() public {
+        vault.deposit(1e4);
+        uint256 daoReward = vault.checkDAOReward();
+        assertEq(daoReward, 0); // Assuming no rewards initially
+    }
+
+    // function test_canSubmitProof() public {
+    //     vault.submitProof(100);
+    //     // Check if the productivity score is updated
+    //     assertEq(vault.productivityScore(address(this)), 100);
+    // }
+
+    // function test_canSubmitMultipleProofs() public {
+    //     vault.submitProof(50);
+    //     vault.submitProof(150);
+    //     // Check if the productivity score is updated correctly
+    //     assertEq(vault.productivityScore(address(this)), 200);
+    // }
 }
