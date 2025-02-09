@@ -84,6 +84,21 @@ export default function App() {
               <TransactionStatusAction />
             </TransactionStatus>
           </Transaction>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              textDecoration: "underline",
+            }}
+          >
+            <a
+              href="https://t.me/ProductivityGodBot"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Go and chat on Telegram
+            </a>
+          </div>
         </div>
       </main>
     </div>
