@@ -4,6 +4,16 @@ pragma solidity ^0.8.13;
 import {Script, console} from "forge-std/src/Script.sol";
 import {Vault} from "../src/Vault.sol";
 
+// Base
+address constant addressProvider = 0xe20fCBdBfFC4Dd138cE8b2E6FBb6CB49777ad64D;
+address constant usdc = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+address constant aUsdc = 0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB;
+
+// // Sepolia Base
+// address constant addressProvider = 0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A;
+// address constant usdc = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
+// address constant aUsdc = 0x1E933bC6C4D1B2176D8Ac890a836040CDE8b79D0;
+
 contract VaultScript is Script {
     Vault public vault;
 
@@ -12,12 +22,7 @@ contract VaultScript is Script {
     function run() public {
         vm.startBroadcast();
 
-        //_addressesProvider testnet = 0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A
-        //_addressesProvider mainnet on base = 0xe20fCBdBfFC4Dd138cE8b2E6FBb6CB49777ad64D 
-        // usdc testnet = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
-        // usdc mainnet = 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
-        // a
-        vault = new Vault(0xe20fCBdBfFC4Dd138cE8b2E6FBb6CB49777ad64D);
+        vault = new Vault(addressProvider, usdc, aUsdc);
 
         vm.stopBroadcast();
     }

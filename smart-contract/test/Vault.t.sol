@@ -67,6 +67,7 @@ contract VaultTest is Test {
         vm.expectRevert("user balance is less than amount");
         vault.withdraw(1e4); // No deposit made yet
     }
+
     // fails hehe
     // function test_cannotDepositMoreThanBalance() public {
     //     usdcToken.approve(address(vault), 1e6);
@@ -78,28 +79,29 @@ contract VaultTest is Test {
     function test_canClaimDAOReward() public {
         vault.deposit(1e4);
         vault.claimDAOReward();
+
         // Check if the DAO reward was claimed correctly
-        assertEq(vault.checkDAOReward(), 0); // Assuming no rewards initially
+        assertEq(vault.daoRewards(), 0); // Assuming no rewards initially
     }
 
     function test_canClaimUserRewards() public {
         vault.deposit(1e4);
-        uint256 slashed = 0; // Assuming no slashing for simplicity
-        vault.claimUserRewards(address(this), slashed);
+        vault.claimUserRewards(address(this));
         // Check if the user rewards were claimed correctly
-        assertEq(vault.checkUserReward(address(this), slashed), 0); // Assuming no rewards initially
+        (uint256 _userRewards, ) = vault.calculateRewards(address(this));
+        assertEq(_userRewards, 0); // Assuming no rewards initially
     }
 
     function test_checkUserReward() public {
         vault.deposit(1e4);
-        uint256 slashed = 0; // Assuming no slashing for simplicity
-        uint256 userReward = vault.checkUserReward(address(this), slashed);
-        assertEq(userReward, 0); // Assuming no rewards initially
+
+        (uint256 _userRewards, ) = vault.calculateRewards(address(this));
+        assertEq(_userRewards, 0); // Assuming no rewards initially
     }
 
     function test_checkDAOReward() public {
         vault.deposit(1e4);
-        uint256 daoReward = vault.checkDAOReward();
+        uint256 daoReward = vault.daoRewards();
         assertEq(daoReward, 0); // Assuming no rewards initially
     }
 
