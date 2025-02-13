@@ -27,8 +27,6 @@ import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { calls } from "./calls";
 
 export default function App() {
-  const [hasApproved, setHasApproved] = useState(false);
-
   // TODO check approval
 
   const handleOnStatus = useCallback((status: LifecycleStatus) => {
