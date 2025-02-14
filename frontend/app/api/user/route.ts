@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { usersTable } from "../../db/schema";
+import { tasksTable, usersTable } from "../../db/schema";
 import { db } from "../../db";
 import { handleError } from "@/app/utils/handleError";
 import { type NextRequest } from "next/server";
