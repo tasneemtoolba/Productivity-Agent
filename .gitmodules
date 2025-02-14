@@ -13,3 +13,6 @@
 [submodule "smart-contract/lib/openzeppelin-contracts"]
 	path = smart-contract/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "smart-contract/solidity/lib/openzeppelin-contracts"]
+	path = smart-contract/solidity/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
