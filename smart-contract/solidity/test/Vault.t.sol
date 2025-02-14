@@ -28,7 +28,11 @@ contract VaultTest is Test {
         uint256 forkId = vm.createFork(vm.rpcUrl("base"), 26_093_599);
         vm.selectFork(forkId);
         deal(address(usdcToken), address(this), 2e6);
-        vault = new Vault(0xe20fCBdBfFC4Dd138cE8b2E6FBb6CB49777ad64D, 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, 0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB);
+        vault = new Vault(
+            0xe20fCBdBfFC4Dd138cE8b2E6FBb6CB49777ad64D,
+            0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB
+        );
         usdcToken.approve(address(vault), 2e6);
     }
 
@@ -94,8 +98,11 @@ contract VaultTest is Test {
 
     function test_checkUserReward() public {
         vault.deposit(1e4);
-
-        (uint256 _userRewards, ) = vault.calculateRewards(address(this));
+        uint256 _seasonId = 0;
+        (uint256 _userRewards, ) = vault.calculateRewards(
+            address(this),
+            _seasonId
+        );
         assertEq(_userRewards, 0); // Assuming no rewards initially
     }
 

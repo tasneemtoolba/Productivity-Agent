@@ -19,9 +19,12 @@ contract Vault is ERC20, Ownable {
     IERC20 public immutable aUsdcToken;
 
     uint256 totalClaimed;
-    mapping(address => uint256) public claimedRewards; // user => claimed rewards
-    mapping(address => uint256) public slashed; // user => slashed amount out of 1e18
+    mapping(uint256 => mapping(address => uint256)) public claimedRewards; // user => claimed rewards
+    mapping(uint256 => mapping(address => uint256)) public slashed; // user => slashed amount out of 1e18
 
+    uint256 _currentSeason = 0;
+    uint256 public _startSeasonTime;
+    uint256 public _seasonDuration = 7 days;
     address productivityGodAgent;
 
     uint256 public daoRewards;
@@ -31,6 +34,10 @@ contract Vault is ERC20, Ownable {
     event Withdraw(address indexed _user, uint256 _amount);
     event ClaimUserRewards(address indexed _user, uint256 _userRewards);
     event ClaimRewardsDAO(uint256 _daoRewards);
+    event StartedNewSeason(
+        uint256 _newSeasonStartTime,
+        uint256 _seasonDuration
+    );
 
     constructor(
         address _addressProvider,
@@ -41,6 +48,7 @@ contract Vault is ERC20, Ownable {
         POOL = IPool(ADDRESSES_PROVIDER.getPool());
         IERC20(_usdcToken).approve(address(POOL), type(uint256).max);
 
+        _startSeasonTime = block.timestamp;
         usdcToken = IERC20(_usdcToken);
         aUsdcToken = IERC20(_aUsdcToken);
     }
@@ -72,13 +80,13 @@ contract Vault is ERC20, Ownable {
             "user balance is less than amount"
         );
         // require(balanceOf(msg.sender)>=_amount,"withdrawing more than the available");
-        withdrawlLiquidity(_amount);
+        _withdrawlLiquidity(_amount);
         usdcToken.transfer(msg.sender, _amount);
         _burn(msg.sender, _amount);
         emit Withdraw(msg.sender, _amount);
     }
 
-    function withdrawlLiquidity(uint256 _amount) internal returns (uint256) {
+    function _withdrawlLiquidity(uint256 _amount) internal returns (uint256) {
         address asset = address(usdcToken);
         uint256 amount = _amount;
         address to = address(this);
@@ -93,7 +101,8 @@ contract Vault is ERC20, Ownable {
     // _slashed is out of 10e18 ether. So 10e18 would be 100%, 10e17 would be 10%, etc
 
     function calculateRewards(
-        address _user
+        address _user,
+        uint256 _seasonId
     ) public view returns (uint256 _userRewards, uint256 _daoRewards) {
         if (totalSupply() == 0) {
             _userRewards = 0;
@@ -104,62 +113,62 @@ contract Vault is ERC20, Ownable {
             totalSupply() +
             totalClaimed) * balanceOf(_user)) /
             totalSupply() -
-            claimedRewards[_user];
+            claimedRewards[_seasonId][_user];
 
         // Calculate the final reward after slashing
-        _userRewards = ((1e18 - slashed[_user]) * baseReward) / 1e18;
-        _daoRewards = (slashed[_user] * baseReward) / 1e18;
+        _userRewards = ((1e18 - slashed[_seasonId][_user]) * baseReward) / 1e18;
+        _daoRewards = (slashed[_seasonId][_user] * baseReward) / 1e18;
     }
 
-    function setProductivityGodAgent(address _agent) external onlyOwner {
-        productivityGodAgent = _agent;
+    function _startNewSeason() internal {
+        _startSeasonTime = block.timestamp;
+        _currentSeason += 1;
+        emit StartedNewSeason(_startSeasonTime, _seasonDuration);
     }
 
     function slashUser(address _user, uint256 _amount) external {
         require(msg.sender == productivityGodAgent, "Not agent");
-        slashed[_user] = slashed[_user] + _amount > 1 ether
-            ? slashed[_user] + _amount
+        if (_startSeasonTime + _seasonDuration < block.timestamp) {
+            _startNewSeason();
+        }
+        slashed[_currentSeason][_user] = slashed[_currentSeason][_user] +
+            _amount >
+            1 ether
+            ? slashed[_currentSeason][_user] + _amount
             : 1 ether;
 
-        emit SlashUser(_user, slashed[_user]);
+        emit SlashUser(_user, slashed[_currentSeason][_user]);
     }
 
     function claimDAOReward() external {
-        withdrawlLiquidity(daoRewards);
+        _withdrawlLiquidity(daoRewards);
         emit ClaimRewardsDAO(daoRewards);
         daoRewards = 0;
     }
 
-    function claimUserRewards(address _user) external {
+    function claimUserRewards(address _user, uint256 _seasonId) external {
         // here you take the msg.sender, you check its amount of protocol tokens, send the share of rewards minus what was slashed, send the slashed amount to the DAO
         // require(balanceOf(msg.sender)>=_amount,"withdrawing more than the available");
-        (uint256 _userRewards, uint256 _daoRewards) = calculateRewards(_user);
+        if (_startSeasonTime + _seasonDuration < block.timestamp) {
+            _startNewSeason();
+        }
+        require(
+            _seasonId < _currentSeason,
+            "You can't claim rewards of the current season"
+        );
+        (uint256 _userRewards, uint256 _daoRewards) = calculateRewards(
+            _user,
+            _seasonId
+        );
 
         totalClaimed += _userRewards + _daoRewards;
-        claimedRewards[_user] += _userRewards;
+        claimedRewards[_seasonId][_user] += _userRewards;
         daoRewards += _daoRewards;
-        slashed[_user] = 0;
+        slashed[_seasonId][_user] = 0;
 
-        withdrawlLiquidity(_userRewards);
+        _withdrawlLiquidity(_userRewards);
         usdcToken.transfer(_user, _userRewards);
         emit ClaimUserRewards(_user, _userRewards);
-    }
-
-    function getUserAccountData(
-        address _userAddress
-    )
-        external
-        view
-        returns (
-            uint256 totalCollateralBase,
-            uint256 totalDebtBase,
-            uint256 availableBorrowsBase,
-            uint256 currentLiquidationThreshold,
-            uint256 ltv,
-            uint256 healthFactor
-        )
-    {
-        return POOL.getUserAccountData(_userAddress);
     }
 
     receive() external payable {}
@@ -171,5 +180,14 @@ contract Vault is ERC20, Ownable {
     ) external payable onlyOwner returns (bool, bytes memory) {
         (bool success, bytes memory result) = to.call{value: value}(data);
         return (success, result);
+    }
+
+    function changeSeasonDuration(uint256 _newSeasonDuration) external {
+        require(msg.sender == productivityGodAgent, "Not agent");
+        _seasonDuration = _newSeasonDuration;
+    }
+
+    function setProductivityGodAgent(address _agent) external onlyOwner {
+        productivityGodAgent = _agent;
     }
 }
