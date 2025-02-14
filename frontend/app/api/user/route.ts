@@ -37,7 +37,10 @@ export async function POST(req: Request) {
 
     // TODO validate that telgram and wallet don't already exist
 
-    await db.insert(usersTable).values(newUser.data);
+    await db.insert(usersTable).values({
+      address: newUser.data.address.toLowerCase(),
+      telegram: newUser.data.address.toLowerCase(),
+    });
 
     return Response.json({ success: true });
   } catch (e) {
