@@ -1,15 +1,10 @@
 import "dotenv/config";
 import { usersTable } from "../../db/schema";
 import { db } from "../../db";
-import { z } from "zod";
 import { handleError } from "@/app/utils/handleError";
 import { type NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
-
-const newUserSchema = z.object({
-  telegram: z.string(),
-  address: z.string().regex(/0x[a-fA-F0-9]{40}/),
-});
+import { userSchema } from "@/app/schemas/user.schema";
 
 export async function GET(req: NextRequest) {
   try {
@@ -24,9 +19,11 @@ export async function GET(req: NextRequest) {
       .where(eq(usersTable.address, _address))
       .limit(1);
 
-    return Response.json({
-      linkedTelegram: typeof user[0]?.telegram === "string",
-    });
+    if (user.length === 1) {
+      return Response.json({ status: "success", user: user[0] });
+    }
+
+    return Response.json({ status: "unknown" });
   } catch (e) {
     return handleError(e as Error);
   }
@@ -34,9 +31,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: Request) {
   try {
-    const newUser = newUserSchema.safeParse(await req.json());
+    const newUser = userSchema.safeParse(await req.json());
 
     if (!newUser.success) throw new Error("400");
+
+    // TODO validate that telgram and wallet don't already exist
 
     await db.insert(usersTable).values(newUser.data);
 
