@@ -129,7 +129,18 @@ export default function App() {
   return (
     <div className="flex flex-col min-h-screen font-sans dark:bg-background dark:text-white bg-white text-black">
       <header className="pt-4 pr-4">
-        <div className="flex justify-end">
+        <div className="flex justify-end" style={{ gap: "8px" }}>
+          {telegram && (
+            <div
+              style={{
+                padding: "12px",
+                backgroundColor: "var(--ock-bg-primary)",
+                borderRadius: ".75rem",
+              }}
+            >
+              {`Telegram: @${telegram}`}
+            </div>
+          )}
           <div className="wallet-container">
             <Wallet>
               <ConnectWallet>
